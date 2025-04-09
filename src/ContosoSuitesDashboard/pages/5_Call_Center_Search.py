@@ -1,5 +1,6 @@
 import streamlit as st
 from azure.cosmos import CosmosClient
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 import openai
 
 st.set_page_config(layout="wide")
@@ -8,7 +9,24 @@ def make_azure_openai_embedding_request(text):
     """Create and return a new embedding request. Key assumptions:
     - Azure OpenAI endpoint, key, and deployment name stored in Streamlit secrets."""
 
-    return "This is a placeholder result. Fill in with real embedding."
+    token_provider = get_bearer_token_provider(
+        DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
+    )
+    aoai_endpoint = st.secrets["aoai"]["endpoint"]
+    aoai_embedding_deployment_name = st.secrets["aoai"]["embedding_deployment_name"]
+
+    client = openai.AzureOpenAI(
+        azure_ad_token_provider=token_provider,
+        api_version="2024-06-01",
+        azure_endpoint = aoai_endpoint
+    )
+    # Create and return a new embedding request
+    return client.embeddings.create(
+        model=aoai_embedding_deployment_name,
+        input=text
+    )
+    
+
 
 def make_cosmos_db_vector_search_request(query_embedding, max_results=5,minimum_similarity_score=0.5):
     """Create and return a new vector search request. Key assumptions:
